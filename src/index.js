@@ -1,4 +1,7 @@
 import express from "express";
+import routes from "./routes/index.mjs";
+import cookieParser from "cookie-parser";
+import session from "express-session";
 
 import {
   query,
@@ -10,13 +13,21 @@ import {
 import { creatUserValidationSchema } from './utils/validationSchemas.mjs'
 
 
-import userRouter from "./routes/users.mjs";
-import { mockUsers } from "./utils/constants.mjs";
-import { resolveIndexByUserId } from "./utils/middlewares.mjs";
+//import userRouter from "./routes/users.mjs";
+//import { mockUsers } from "./utils/constants.mjs";
+//import { resolveIndexByUserId } from "./utils/middlewares.mjs";
+//import productRouter from "./routes/products.mjs";
 
 const app = express();
 app.use(express.json());
-app.use(userRouter);
+// app.use(userRouter);
+// app.use(productRouter);
+app.use(cookieParser("ThisIsCookieExample"));
+
+app.use(routes);
+
+
+const PORT = process.env.PORT || 3000;
 /*                                  Middle Ware                                     */
 
 const loggingMiddleWare = (request, response, next) => {
@@ -97,7 +108,7 @@ app.delete("/api/user/:id", resolveIndexByUserId, (request, response) => {
 
 //const port = 3000;
 
-const PORT = process.env.PORT || 3000;
+
 
 // const mockUsers = [
 //   {
@@ -139,7 +150,12 @@ const PORT = process.env.PORT || 3000;
 //   response.status(201).send({ msg: "Hello"});
 // });
 
+// app.get("/", (request, response) => {
+//   response.status(201).send({ msg: "Hello" });
+// });
+
 app.get("/", (request, response) => {
+  response.cookie("ThisIsCookie", "Example", { Eg : 60000, signed: true});
   response.status(201).send({ msg: "Hello" });
 });
 
