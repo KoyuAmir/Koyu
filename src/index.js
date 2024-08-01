@@ -10,8 +10,13 @@ import {
 import { creatUserValidationSchema } from './utils/validationSchemas.mjs'
 
 
+import userRouter from "./routes/users.mjs";
+import { mockUsers } from "./utils/constants.mjs";
+import { resolveIndexByUserId } from "./utils/middlewares.mjs";
+
 const app = express();
 app.use(express.json());
+app.use(userRouter);
 /*                                  Middle Ware                                     */
 
 const loggingMiddleWare = (request, response, next) => {
@@ -19,6 +24,8 @@ const loggingMiddleWare = (request, response, next) => {
   next();
 };
 
+
+/*
 const resolveIndexByUserId = (request, response, next) => {
   const {
     params: { id },
@@ -60,69 +67,70 @@ app.delete("/api/user/:id", resolveIndexByUserId, (request, response) => {
 
   return response.sendStatus(200);
 });
+*/
 
 /* --------------------------------------------Validation ------------------------------------------------------------------- */
-app.get(
-  "/api/user",
-  query("filter")
-    .isString()
-    .notEmpty()
-    .withMessage("Must not be empty")
-    .isLength({ min: 3, max: 10 })
-    .withMessage("Must be at least 3-10 character"),
-  (request, response) => {
-    const result = validationResult(request);
-    //console.log(request);
-    console.log(result);
-    const {
-      query: { filter, value },
-    } = request;
+// app.get(
+//   "/api/user",
+//   query("filter")
+//     .isString()
+//     .notEmpty()
+//     .withMessage("Must not be empty")
+//     .isLength({ min: 3, max: 10 })
+//     .withMessage("Must be at least 3-10 character"),
+//   (request, response) => {
+//     const result = validationResult(request);
+//     //console.log(request);
+//     console.log(result);
+//     const {
+//       query: { filter, value },
+//     } = request;
 
-    if (filter && value)
-      return response.send(
-        mockUsers.filter((user) => user[filter].includes(value))
-      );
+//     if (filter && value)
+//       return response.send(
+//         mockUsers.filter((user) => user[filter].includes(value))
+//       );
 
-    return response.send(mockUsers);
-  }
-);
+//     return response.send(mockUsers);
+//   }
+// );
 
 //const port = 3000;
 
 const PORT = process.env.PORT || 3000;
 
-const mockUsers = [
-  {
-    id: 1,
-    username: "hercules",
-    displayName: "hercules",
-  },
-  {
-    id: 2,
-    username: "nileh",
-    displayName: "nileh",
-  },
-  {
-    id: 3,
-    username: "layav",
-    displayName: "layav",
-  },
-  {
-    id: 4,
-    username: "hellen",
-    displayName: "hellen",
-  },
-  {
-    id: 5,
-    username: "jack",
-    displayName: "jack",
-  },
-  {
-    id: 6,
-    username: "uden",
-    displayName: "uden",
-  },
-];
+// const mockUsers = [
+//   {
+//     id: 1,
+//     username: "hercules",
+//     displayName: "hercules",
+//   },
+//   {
+//     id: 2,
+//     username: "nileh",
+//     displayName: "nileh",
+//   },
+//   {
+//     id: 3,
+//     username: "layav",
+//     displayName: "layav",
+//   },
+//   {
+//     id: 4,
+//     username: "hellen",
+//     displayName: "hellen",
+//   },
+//   {
+//     id: 5,
+//     username: "jack",
+//     displayName: "jack",
+//   },
+//   {
+//     id: 6,
+//     username: "uden",
+//     displayName: "uden",
+//   },
+// ];
 
 // app.get('/',loggingMiddleWare, (request, response, next) => {
 //   console.log("Base URL");
@@ -147,8 +155,8 @@ app.get("/", (request, response) => {
 //   return response.status(201).send(newuser);
 // });
 
-app.post(
-  "/api/user", checkSchema(creatUserValidationSchema),
+// app.post(
+//   "/api/user", checkSchema(creatUserValidationSchema),
   // [
   //   body("username")
   //     .notEmpty()
@@ -159,25 +167,25 @@ app.post(
   //     .withMessage("Username must be string"),
   //   body("displayName").notEmpty(),
   // ],
-  (request, response) => {
-    const result = validationResult(request);
-    console.log(result);
+//   (request, response) => {
+//     const result = validationResult(request);
+//     console.log(result);
 
-    if (!result.isEmpty())
-      return response.status(400).send({ error: result.array() });
+//     if (!result.isEmpty())
+//       return response.status(400).send({ error: result.array() });
 
-    const data = matchedData(request);
-    console.log(data);
+//     const data = matchedData(request);
+//     console.log(data);
 
-    // const { body } = request;
-    const newuser = {
-      id: mockUsers[mockUsers.length - 1].id + 1,
-      ...body,
-    };
-    mockUsers.push(newuser);
-    return response.status(201).send(newuser);
-  }
-);
+//     // const { body } = request;
+//     const newuser = {
+//       id: mockUsers[mockUsers.length - 1].id + 1,
+//       ...body,
+//     };
+//     mockUsers.push(newuser);
+//     return response.status(201).send(newuser);
+//   }
+// );
 
 app.use(loggingMiddleWare, (request, response, next) => {
   console.log("Logging...");
@@ -268,6 +276,9 @@ app.delete("/api/user/:id", (request, response) => {
   return response.sendStatus(200);
 });
 */
+
+/* ---------------------------Router ---------------------------------------------------- */
+
 
 app.listen(PORT, () => {
   console.log(`Running on http://localhost:${PORT}`);
