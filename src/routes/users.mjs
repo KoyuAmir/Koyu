@@ -14,6 +14,15 @@ router.get("/api/user",
     .isLength({ min: 3, max: 10 })
     .withMessage("Must be at least 3-10 character"),
   (request, response) => {
+    console.log(request.session);
+    console.log(request.session.id);
+    request.sessionStore.get(request.session.id, (err, sessionData) => {
+      if (err) {
+        console.log(err);
+        throw err;
+      }
+      console.log(sessionData);
+    })
     const result = validationResult(request);
     //console.log(request);
     console.log(result);
@@ -33,6 +42,7 @@ router.get("/api/user",
 router.post(
   "/api/user", checkSchema(creatUserValidationSchema),
   (request, response) => {
+    
     const result = validationResult(request);
     console.log(result);
 
