@@ -3,6 +3,7 @@ import routes from "./routes/index.mjs";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import passport from "passport";
+import mongoose from "mongoose";
 import "./strategies/local-strategy.mjs";
 import { mockUsers } from "./utils/constants.mjs";
 
@@ -13,8 +14,7 @@ import {
   matchedData,
   checkSchema,
 } from "express-validator";
-import { creatUserValidationSchema } from './utils/validationSchemas.mjs'
-
+import { creatUserValidationSchema } from "./utils/validationSchemas.mjs";
 
 //import userRouter from "./routes/users.mjs";
 //import { mockUsers } from "./utils/constants.mjs";
@@ -22,27 +22,33 @@ import { creatUserValidationSchema } from './utils/validationSchemas.mjs'
 //import productRouter from "./routes/products.mjs";
 
 const app = express();
+mongoose
+  .connect("mongodb://localhost:27017/a_project")
+  .then(() => console.log("Connected to database"))
+  .catch((err) => console.log(`Error: ${err}`));
+
 app.use(express.json());
 // app.use(userRouter);
 // app.use(productRouter);
 app.use(cookieParser("ThisIsCookieExample"));
-app.use(session({
-  secret: "koyu message",
-  saveUninitialized: false,
-  resave: false,
-  cookie: {
-    maxAge: 60000 * 60,
-  }
-}));
+app.use(
+  session({
+    secret: "koyu message",
+    saveUninitialized: false,
+    resave: false,
+    cookie: {
+      maxAge: 60000 * 60,
+    },
+  })
+);     
 
 app.use(passport.initialize());
-app.use(passport.session()); 
+app.use(passport.session());
 app.use(routes);
 
-
-app.post('/api/auth', passport.authenticate("local"),(request, response) =>{
-    response.sendStatus(200);
-});    
+app.post("/api/auth", passport.authenticate("local"), (request, response) => {
+  response.sendStatus(200);
+});
 
 // app.get('./api/auth/status', (request, response) => {
 //   console.log(`Inside /auth/status endpoint`);
@@ -51,10 +57,19 @@ app.post('/api/auth', passport.authenticate("local"),(request, response) =>{
 
 // });
 
-app.get('/api/auth/status', (request, response) => {
+app.get("/api/auth/status", (request, response) => {
   console.log(`Inside /api/auth/status endpoint`);
-  console.log(request.user);  // Check if the user is set on the request object
+  console.log(request.user);
+  console.log(request.session);
   return request.user ? response.send(request.user) : response.sendStatus(401);
+});
+
+app.post("/api/auth/logout", (request, response) => {
+  if (!request.user) return response.sendStatus(401);
+  request.logout((err) => {
+    if (err) return response.sendStatus(400);
+    response.send(200);
+  });
 });
 
 const PORT = process.env.PORT || 3000;
@@ -64,7 +79,6 @@ const loggingMiddleWare = (request, response, next) => {
   console.log(`${request.method} - ${request.url} `);
   next();
 };
-
 
 /*
 const resolveIndexByUserId = (request, response, next) => {
@@ -138,8 +152,6 @@ app.delete("/api/user/:id", resolveIndexByUserId, (request, response) => {
 
 //const port = 3000;
 
-
-
 // const mockUsers = [
 //   {
 //     id: 1,
@@ -188,7 +200,7 @@ app.get("/", (request, response) => {
   // console.log(request.session);
   console.log(request.session.id);
   request.session.visited = true;
-  response.cookie("ThisIsCookie", "Example", { Eg : 60000, signed: true});
+  response.cookie("ThisIsCookie", "Example", { Eg: 60000, signed: true });
   response.status(201).send({ msg: "Hello" });
 });
 
@@ -206,16 +218,16 @@ app.get("/", (request, response) => {
 
 // app.post(
 //   "/api/user", checkSchema(creatUserValidationSchema),
-  // [
-  //   body("username")
-  //     .notEmpty()
-  //     .withMessage("Must not be emoty")
-  //     .isLength({ min: 5, max: 32 })
-  //     .withMessage("Username must be have at least 3-32 character")
-  //     .isString()
-  //     .withMessage("Username must be string"),
-  //   body("displayName").notEmpty(),
-  // ],
+// [
+//   body("username")
+//     .notEmpty()
+//     .withMessage("Must not be emoty")
+//     .isLength({ min: 5, max: 32 })
+//     .withMessage("Username must be have at least 3-32 character")
+//     .isString()
+//     .withMessage("Username must be string"),
+//   body("displayName").notEmpty(),
+// ],
 //   (request, response) => {
 //     const result = validationResult(request);
 //     console.log(result);
@@ -328,31 +340,30 @@ app.delete("/api/user/:id", (request, response) => {
 
 /* ---------------------------Router ---------------------------------------------------- */
 
-
-app.post('/api/auth', (request, response) => {
-  const {body : {username, password},} = request;
+app.post("/api/auth", (request, response) => {
+  const {
+    body: { username, password },
+  } = request;
   const findUser = mockUsers.find((user) => user.username === username);
   if (!findUser || findUser.password !== password)
-    return response.status(401). send({msg: "Invalid Credentials"});
+    return response.status(401).send({ msg: "Invalid Credentials" });
 
   request.session.user = findUser;
   return response.status(200).send(findUser);
 });
 
-app.get('/api/auth/status', (request, response) => {
+app.get("/api/auth/status", (request, response) => {
   request.sessionStore.get(request.sessionID, (err, session) => {
     console.log(session);
   });
   return request.session.user
-  ? response.status(200).send(request.session.user)
-  : response.status(401).send({ msg: "Not Authenticated"});
+    ? response.status(200).send(request.session.user)
+    : response.status(401).send({ msg: "Not Authenticated" });
 });
 
-
-
-app.post('/api/cart', (request, response) => {
+app.post("/api/cart", (request, response) => {
   if (!request.session.user) return response.sendStatus(401);
-  const { body: item} = request;
+  const { body: item } = request;
 
   const { cart } = request.session;
 
@@ -364,14 +375,11 @@ app.post('/api/cart', (request, response) => {
 
   return response.status(201).send(item);
 });
- 
 
-app.get('/api/cart', (request, response) => {
+app.get("/api/cart", (request, response) => {
   if (!request.session.user) return response.sendStatus(401);
   return response.send(request.session.cart ?? []);
 });
-
-
 
 app.listen(PORT, () => {
   console.log(`Running on http://localhost:${PORT}`);
